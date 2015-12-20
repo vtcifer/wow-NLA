@@ -1,0 +1,2 @@
+--settings file for future configuration panael
+--not used currently
