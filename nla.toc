@@ -1,0 +1,10 @@
+## Interface: 60200 
+## Title: Ninja-Loot Alarm
+## Notes: Watches for looters rolling need, and alarms past a defined threshold 
+## Author: VTC
+## OptionalDeps: 
+## Dependencies: 
+## Version: 0.0.12
+## SavedVariablesPerCharacter: 
+
+main.lua
