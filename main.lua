@@ -4,11 +4,9 @@ local LOOT_ROLL_TYPE_GREED = LOOT_ROLL_TYPE_GREED; -- Constants.lua:304-307
 local LOOT_ROLL_TYPE_DISENCHANT = LOOT_ROLL_TYPE_DISENCHANT; -- Constants.lua:304-307
 local LOOT_ROLL_TYPE_PASS = LOOT_ROLL_TYPE_PASS; -- Constants.lua:304-307
 
-local NLA_Players = {};
-
 playerOBJ = {};
 playerOBJ.__index = playerOBJ;
-function playerOBJ:new (o)
+function playerOBJ:new (o, name)
     o=o  or {};
     setmetatable(o,self);
     self.__index = self
@@ -18,6 +16,7 @@ function playerOBJ:new (o)
     self.pass=0;
     self.total=0;
     self.need_ratio=0.0;
+    self.name = name;
     return o
 end
 function playerOBJ:update_NeedRatio()
@@ -49,6 +48,7 @@ function NLA_round(num,precision)
 end
 
 local player_roll_names = {};
+local NLA_Players = {};
 
 --Setup a lookup table for converting the number returned, to a text value
 local LOOT_ROLL_TYPES = { -- array over roll type and frame that goes with it
@@ -107,7 +107,7 @@ function events:LOOT_HISTORY_ROLL_CHANGED(...)
 	roll_type = LOOT_ROLL_TYPES[roll_type_number]
         
         if NLA_Players[player_name] == nil then
-            NLA_Players[player_name] = playerOBJ:new();
+            NLA_Players[player_name] = playerOBJ:new(nil,player_name);
         end
         
         if roll_type == "Need" then
