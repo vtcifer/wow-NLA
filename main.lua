@@ -72,7 +72,8 @@ function events:LOOT_HISTORY_ROLL_CHANGED(...)
 			--second var passed
 			--integer representing the player that the event occurs for	
 	local item_idx, player_idx = ...;
-
+        local temp;
+        
 	--setup own local variables
 	local roll_id, item_link, max_rolls, is_Master; 
         local player_name, roll_type_number, roll_type, roll_number, is_me;
@@ -108,25 +109,21 @@ function events:LOOT_HISTORY_ROLL_CHANGED(...)
         
         if NLA_Players[player_name] == nil then
             NLA_Players[player_name] = playerOBJ:new(nil,player_name);
+        else 
+            temp = NLA_Players[player_name];
         end
         
         if roll_type == "Need" then
-            temp = NLA_Players[player_name];
             print("Player " .. player_name .. " new need ratio: " .. temp:needed())
-            NLA_Players[plalyer_name] = temp;
         elseif roll_type == "Greed" then
-            temp = NLA_Players[player_name];
             temp:greeded()
-            NLA_Players[plalyer_name] = temp;
         elseif roll_type == "Disenchant" then
-            temp = NLA_Players[player_name];
             temp:disenchanted()
-            NLA_Players[plalyer_name] = temp;
         elseif roll_type == "Passed" then
-            temp = NLA_Players[player_name];
             temp:passed()
-            NLA_Players[plalyer_name] = temp;
         end
+        
+        NLA_Players[player_name] = temp;
 end
 
 _NLA_frame:SetScript("OnEvent", function(self, event, ...)
