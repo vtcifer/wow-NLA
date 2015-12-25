@@ -9,7 +9,7 @@ NLA_Players = {};
 
 playerOBJ = {};
 playerOBJ.__index = playerOBJ;
-function playerOBJ:new (o, name)
+function playerOBJ:new (o, newname)
     o=o  or {};
     setmetatable(o,self);
     self.__index = self;
@@ -19,12 +19,11 @@ function playerOBJ:new (o, name)
     self.pass=0;
     self.total=0;
     self.need_ratio=0.0;
-    self.name = name;
+    self.name = newname;
     return o;
 end
 function playerOBJ:update_NeedRatio()
-    self.need_ratio = self.need / self.total;
-    self.need_ratio = NLA_round(self.need_ratio, -4) * 100;
+    self.need_ratio =  NLA_round(self.need / self.total, -4) * 100;
 end
 function playerOBJ:needed()
     self.need = self.need + 1;
@@ -77,14 +76,14 @@ function NLA_CheckAlert(player)
 end
 function NLA_Alert(player)
     --only implementing print for now....
-    print(player.name .. " is over max need ratio of (" .. NLA_Conifg.MaxNeedRatio ..") -> " .. player.need .. "/" .. player.total .."=" .. player.need_ratio .. ".")
+    print(player.name .. " is over max need ratio of (" .. NLA_Config.MaxNeedRatio ..") -> " .. player.need .. "/" .. player.total .."=" .. player.need_ratio .. ".")
 end
 function NLA_reset()
     player_roll_names = {};
     NLA_Players = {};
 end
 
---[[
+
 
 --Setup a lookup table for converting the number returned, to a text value
 local LOOT_ROLL_TYPES = { -- array over roll type and frame that goes with it
@@ -94,7 +93,6 @@ local LOOT_ROLL_TYPES = { -- array over roll type and frame that goes with it
 	[LOOT_ROLL_TYPE_DISENCHANT] = "Disenchant",
 };
 
---]]
 
 local _NLA_frame = CreateFrame("Frame")
 local events = {}
@@ -113,18 +111,19 @@ function events:LOOT_HISTORY_ROLL_CHANGED(...)
 
     --setup own local variables
     local roll_id, item_link, max_rolls, is_Master; 
-    local player_name, roll_type_number, roll_type, roll_number, is_me;
-    local _
+    local player_name, roll_type_number, roll_type, roll_number, is_me
+    --These variables aren't used right now
+    local rolls_finished, winner_id, player_class, is_winner;
+    
     --get item link and if master looter.
-    roll_id, item_link, max_rolls, _, _, is_Master  = C_LootHistory.GetItem(item_idx);
+    roll_id, item_link, max_rolls, rolls_finished, winner_id, is_Master  = C_LootHistory.GetItem(item_idx);
     --rollID_num, itemLink_str, numPlayers_num, isDone_bool, winnerIdx_num, isMasterLoot_bool
-
 
     --if master loot, don't track, as master looter should hopefully be paying attention
     if is_Master == true then return end
 
     --get roll details
-    player_name, _, roll_type_number, roll_number, _, is_me = C_LootHistory.GetPlayerInfo(item_idx, player_idx)
+    player_name, player_class, roll_type_number, roll_number, is_winner, is_me = C_LootHistory.GetPlayerInfo(item_idx, player_idx)
     --name_str, class_str, rollType_num, roll_num, isWinner_bool, isMe_bool
 
     --don't track details on yourself
@@ -134,40 +133,58 @@ function events:LOOT_HISTORY_ROLL_CHANGED(...)
 
     --check if you've already got a roll for player
     if (player_roll_names[roll_id] == nil) then
+        if NLA_Config.Debug == true then
+            print("First roll for Item: ".. item_link .. ". Creating entry in  player roll names.")
+        end
         player_roll_names[roll_id] = player_name
     elseif (string.find(player_roll_names[roll_id],player_name,1,true) == nil) then
+        if NLA_Config.Debug == true then
+            print("Adding roll entry in player_roll_names for " .. item_link ..".")
+        end        
         player_roll_names[roll_id] = player_roll_names[roll_id] .. player_name
     else
         return
     end
---[[
+    
     --lookup table
-    roll_type = LOOT_ROLL_TYPES[roll_type_number]
---]]
+    roll_type = LOOT_ROLL_TYPES[roll_type_number]    
+    
+    if NLA_Config.Debug == true then
+        print("Player " .. player_name .. " rolled " .. roll_type .. " on " .. item_link .. ".")        
+    end
 
-    --
     if NLA_Players[player_name] == nil then
         NLA_Players[player_name] = playerOBJ:new(nil,player_name);
+        if NLA_Config.Debug == true then
+            print("Initial roll for player " .. NLA_Players[player_name].name .. ". Created, entry in NLA_Players.")
+        end
     end
-    temp = NLA_Players[player_name];
+    --temp = NLA_Players[player_name];
+
+    if NLA_Config.Debug == true then
+        print("Before update of NLA_Players table.  Name is:" .. NLA_Players[player_name].name .. ".")
+    end
     if roll_type_number == LOOT_ROLL_TYPE_NEED then
-        temp:needed();
+        NLA_Players[player_name]:needed();
         --NLA_CheckAlert(temp);
     elseif roll_type_number == LOOT_ROLL_TYPE_GREED then
-        temp:greeded()
+        NLA_Players[player_name]:greeded()
     elseif roll_type_number == LOOT_ROLL_TYPE_DISENCHANT then
-        temp:disenchanted()
+        NLA_Players[player_name]:disenchanted()
     elseif roll_type_number == LOOT_ROLL_TYPE_PASS then
-        temp:passed()
+        NLA_Players[player_name]:passed()
     else
         if NLA_Config.Debug == true then
             print("Missed loot roll type?! " .. roll_type_number)
         end
     end
-    NLA_Players[player_name] = temp;
-    
+  --  NLA_Players[player_name] = temp;
     if NLA_Config.Debug == true then
-        print("Player " .. temp.name .. " details: " .. temp.need .. "/" .. temp.total .." = " .. temp.need_ratio .. ".")        
+        print("After update of NLA_Players table.  Name is:" ..NLA_Players[player_name].name .. ".")
+    end
+
+    if NLA_Config.Debug == true then
+        print("Player " .. NLA_Players[player_name].name .. " details: " .. NLA_Players[player_name].need .. "/" .. NLA_Players[player_name].total .." = " .. NLA_Players[player_name].need_ratio .. ".")        
     end
 
 end
@@ -217,10 +234,13 @@ function SlashCmdList.NLA(msg, editbox)
         print("NLA: Resetting loot tracking.");
         NLA_reset();
     elseif msg == "debug" then
-        print("NLA: Debug mode on.");
-        NLA_Config["Debug"] = true;
-    elseif msg == "nodebug" then
-        print("NLA: Debug mod off.");
+        NLA_Config["Debug"] = not NLA_Config["Debug"]
+        print("NLA: Debug mode toggled.  New Value: " .. tostring(NLA_Config["Debug"]))
+    elseif msg == "debugon" then
         NLA_Config["Debug"] = false;
+        print("NLA: Debug mode off.");
+    elseif msg == "debugoff" then
+        NLA_Config["Debug"] = true;
+        print("NLA: Debug mode on.");
     end
 end

@@ -8,4 +8,6 @@ WoW (World of Warcraft) Ninja-Loot Alarm
 --      Add instance detection
 --          Add option for auto clear on new instance
 --          Add prompt to clear on new instance
+--      Add detection for unusable loot.
+--      Add detection for non-optimal loot
 --      Code Cleanup

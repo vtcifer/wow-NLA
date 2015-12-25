@@ -2,7 +2,7 @@
 --not used currently
 
 NLA_Config_Default = {
-Version = 0.0,
+Version = 0.1,
 MinNeed = 3,
 MinNeed_Enabled = true,
 MinTotal = 3,
