@@ -4,7 +4,8 @@
 ## Author: VTC
 ## OptionalDeps: 
 ## Dependencies: 
-## Version: 0.0.12
-## SavedVariablesPerCharacter: 
+## Version: 0.1.15
+## SavedVariables: NLA_Config
 
+settings.lua
 main.lua
