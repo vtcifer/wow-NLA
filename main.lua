@@ -4,87 +4,6 @@ local LOOT_ROLL_TYPE_GREED = LOOT_ROLL_TYPE_GREED; -- Constants.lua:304-307
 local LOOT_ROLL_TYPE_DISENCHANT = LOOT_ROLL_TYPE_DISENCHANT; -- Constants.lua:304-307
 local LOOT_ROLL_TYPE_PASS = LOOT_ROLL_TYPE_PASS; -- Constants.lua:304-307
 
-player_roll_names = {};
-NLA_Players = {};
-
-playerOBJ = {};
-playerOBJ.__index = playerOBJ;
-function playerOBJ:new (o, newname)
-    o=o  or {};
-    setmetatable(o,self);
-    self.__index = self;
-    self.need=0;
-    self.greed=0;
-    self.disenchant=0;
-    self.pass=0;
-    self.total=0;
-    self.need_ratio=0.0;
-    self.name = newname;
-    return o;
-end
-function playerOBJ:update_NeedRatio()
-    self.need_ratio =  NLA_round(self.need / self.total, -4) * 100;
-end
-function playerOBJ:needed()
-    self.need = self.need + 1;
-    self.total = self.total + 1;
-    self:update_NeedRatio();
-end
-function playerOBJ:greeded()
-    self.greed = self.greed + 1;
-    self.total = self.total + 1;
-    if NLA_Config.Debug == true then
-        self:update_NeedRatio()
-    end
-end
-function playerOBJ:disenchanted()
-    self.disenchant = self.disenchant + 1;
-    self.total = self.total + 1;
-    if NLA_Config.Debug == true then
-        self:update_NeedRatio()
-    end
-end
-function playerOBJ:passed()
-    self.pass = self.pass + 1;
-    self.total = self.total + 1;
-    if NLA_Config.Debug == true then
-        self:update_NeedRatio()
-    end
-end
-
-function NLA_round(num,precision)
-    local exp = precision and 10^precision or 1;
-    return math.floor(num / exp + 0.5) * exp;
-end
-function NLA_CheckAlert(player)
-    if player.need_ratio > NLA_Config.MaxNeedRatio then
-        if NLA_Config.Debug == true then
-            print("Passed ratio check for " .. player.name ..".")
-        end
-        if (not(NLA_Config.MinTotal_Enabled) or (player.total >= NLA_Config.MinTotal))then
-            if NLA_Config.Debug == true then
-                print("Passed min total check for " .. player.name ..".")
-            end
-            if (not(NLA_Config.MinNeed_Enabled) or (player.need >= NLA_Config.MinNeed) ) then
-                if NLA_Config.Debug == true then
-                    print("Passed min need check for " .. player.name ..".")
-                end
-                NLA_Alert(player);
-            end    
-        end
-    end
-end
-function NLA_Alert(player)
-    --only implementing print for now....
-    print(player.name .. " is over max need ratio of (" .. NLA_Config.MaxNeedRatio ..") -> " .. player.need .. "/" .. player.total .."=" .. player.need_ratio .. ".")
-end
-function NLA_reset()
-    player_roll_names = {};
-    NLA_Players = {};
-end
-
-
-
 --Setup a lookup table for converting the number returned, to a text value
 local LOOT_ROLL_TYPES = { -- array over roll type and frame that goes with it
 	[LOOT_ROLL_TYPE_PASS] = "Pass",
@@ -93,6 +12,8 @@ local LOOT_ROLL_TYPES = { -- array over roll type and frame that goes with it
 	[LOOT_ROLL_TYPE_DISENCHANT] = "Disenchant",
 };
 
+player_roll_names = {};
+NLA_Players = {};
 
 local _NLA_frame = CreateFrame("Frame")
 local events = {}
@@ -107,7 +28,6 @@ function events:LOOT_HISTORY_ROLL_CHANGED(...)
 			--second var passed
 			--integer representing the player that the event occurs for	
     local item_idx, player_idx = ...;
-    local temp;
 
     --setup own local variables
     local roll_id, item_link, max_rolls, is_Master; 
@@ -133,14 +53,18 @@ function events:LOOT_HISTORY_ROLL_CHANGED(...)
 
     --check if you've already got a roll for player
     if (player_roll_names[roll_id] == nil) then
+--[[
         if NLA_Config.Debug == true then
             print("First roll for Item: ".. item_link .. ". Creating entry in  player roll names.")
         end
+--]]
         player_roll_names[roll_id] = player_name
     elseif (string.find(player_roll_names[roll_id],player_name,1,true) == nil) then
+--[[
         if NLA_Config.Debug == true then
             print("Adding roll entry in player_roll_names for " .. item_link ..".")
-        end        
+        end
+--]]
         player_roll_names[roll_id] = player_roll_names[roll_id] .. player_name
     else
         return
@@ -149,24 +73,30 @@ function events:LOOT_HISTORY_ROLL_CHANGED(...)
     --lookup table
     roll_type = LOOT_ROLL_TYPES[roll_type_number]    
     
+--[[
     if NLA_Config.Debug == true then
         print("Player " .. player_name .. " rolled " .. roll_type .. " on " .. item_link .. ".")        
     end
+--]]
 
     if NLA_Players[player_name] == nil then
-        NLA_Players[player_name] = playerOBJ:new(nil,player_name);
+        NLA_Players[player_name] = playerOBJ:new();
+        NLA_Players[player_name]:setname(player_name);
+--[[
         if NLA_Config.Debug == true then
             print("Initial roll for player " .. NLA_Players[player_name].name .. ". Created, entry in NLA_Players.")
         end
+--]]
     end
-    --temp = NLA_Players[player_name];
 
+--[[
     if NLA_Config.Debug == true then
         print("Before update of NLA_Players table.  Name is:" .. NLA_Players[player_name].name .. ".")
     end
+--]]
     if roll_type_number == LOOT_ROLL_TYPE_NEED then
         NLA_Players[player_name]:needed();
-        --NLA_CheckAlert(temp);
+        NLA_CheckAlert(NLA_Players[player_name]);
     elseif roll_type_number == LOOT_ROLL_TYPE_GREED then
         NLA_Players[player_name]:greeded()
     elseif roll_type_number == LOOT_ROLL_TYPE_DISENCHANT then
@@ -178,14 +108,18 @@ function events:LOOT_HISTORY_ROLL_CHANGED(...)
             print("Missed loot roll type?! " .. roll_type_number)
         end
     end
-  --  NLA_Players[player_name] = temp;
+    
+--[[
     if NLA_Config.Debug == true then
         print("After update of NLA_Players table.  Name is:" ..NLA_Players[player_name].name .. ".")
     end
+--]]
 
+--[[
     if NLA_Config.Debug == true then
         print("Player " .. NLA_Players[player_name].name .. " details: " .. NLA_Players[player_name].need .. "/" .. NLA_Players[player_name].total .." = " .. NLA_Players[player_name].need_ratio .. ".")        
     end
+--]]
 
 end
 function events:ADDON_LOADED(...)
@@ -201,10 +135,8 @@ function events:ADDON_LOADED(...)
         print("No NLA settings, loading from default.")
         NLA_Config = NLA_Config_Default;
         return
-    end
-    
     --versioning of defaults (allows for new defaults)
-    if NLA_Config.Version == nil or NLA_Config.Version < NLA_Config_Default.Version then
+    elseif NLA_Config.Version == nil or NLA_Config.Version < NLA_Config_Default.Version then
         for index,value in ipairs(NLA_Config_Default) do
             if NLA_Config[index] == nil then
                 NLA_Config[index] = value

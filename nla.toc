@@ -4,8 +4,10 @@
 ## Author: VTC
 ## OptionalDeps: 
 ## Dependencies: 
-## Version: 0.1.15
+## Version: 0.1.16
 ## SavedVariables: NLA_Config
 
+PlayerOBJ.lua
 settings.lua
+functions.lua
 main.lua
